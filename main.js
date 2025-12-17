@@ -65,19 +65,26 @@ function createPoster(text, x, y, z, rotY = 0, bg = "#ffd700", fg = "#000000") {
   ctx.strokeRect(8, 8, 496, 496);
 
   ctx.fillStyle = fg;
-  ctx.font = "bold 72px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+
+  ctx.font = "900 84px Arial";
   ctx.fillText("METAL", 256, 210);
-  ctx.fillText("PIPES", 256, 300);
+  ctx.fillText("PIPES", 256, 310);
 
   ctx.font = "bold 28px Arial";
-  ctx.fillText("STRONG • LOUD • RELIABLE", 256, 380);
+  ctx.fillText("STRONG • LOUD • RELIABLE", 256, 395);
 
   const texture = new THREE.CanvasTexture(canvas);
+
   const poster = new THREE.Mesh(
-    new THREE.PlaneGeometry(3, 3),
-    new THREE.MeshStandardMaterial({ map: texture })
+    new THREE.PlaneGeometry(4, 4),
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      side: THREE.DoubleSide,       // IMPORTANT
+      emissive: new THREE.Color(0x222222), // makes it pop a bit
+      emissiveIntensity: 0.6
+    })
   );
 
   poster.position.set(x, y, z);
