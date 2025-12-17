@@ -225,7 +225,45 @@ document.addEventListener("keydown", (e) => {
   toast(`+ ${name} ($${price})`);
   updateUI();
 });
+// ---------- NPCs ----------
+const npcs = [];
 
+function createNPC(x, z, color = 0x88aaff) {
+  const npc = new THREE.Group();
+
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.25, 0.7, 4, 8),
+    new THREE.MeshStandardMaterial({ color })
+  );
+  body.position.y = 0.7;
+  npc.add(body);
+
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffe0bd })
+  );
+  head.position.y = 1.3;
+  npc.add(head);
+
+  npc.position.set(x, 0, z);
+
+  // Movement data
+  npc.userData = {
+    dir: Math.random() > 0.5 ? 1 : -1,
+    speed: 0.8 + Math.random() * 0.6
+  };
+
+  scene.add(npc);
+  npcs.push(npc);
+  return npc;
+}
+
+// Spawn NPCs
+createNPC(-10, -4);
+createNPC(4, -8, 0xaaffaa);
+createNPC(10, 5, 0xffaaaa);
 // ---------- Animation loop ----------
 let last = performance.now();
 function animate(){
