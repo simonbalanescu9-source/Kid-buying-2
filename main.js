@@ -1,106 +1,242 @@
-// Scene
+// ---------- Basics ----------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xbfd1e5);
 
-// Camera
-const camera = new THREE.PerspectiveCamera(
-  75, window.innerWidth / window.innerHeight, 0.1, 1000
-);
-camera.position.set(0, 1.6, 5);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 1.6, 8);
 
-// Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
-// Light
+// Lights
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+dir.position.set(6, 10, 4);
+scene.add(dir);
 
-// Floor
+// UI
+const moneyText = document.getElementById("money");
+const cartText  = document.getElementById("cart");
+const listText  = document.getElementById("list");
+const toastEl   = document.getElementById("toast");
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(()=> toastEl.classList.remove("show"), 1200);
+}
+
+// ---------- Store room ----------
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(20, 20),
-  new THREE.MeshStandardMaterial({ color: 0xeeeeee })
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.MeshStandardMaterial({ color: 0xf2f2f2 })
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-// Player movement
-const keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
-
-// Game data
-let money = 20;
-let cart = 0;
-
-// UI
-const moneyText = document.getElementById("money");
-const cartText = document.getElementById("cart");
-
-// Grocery items
-const items = [];
-
-function createItem(name, price, x, z, color) {
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 0.6, 0.6),
-    new THREE.MeshStandardMaterial({ color })
+// Simple walls
+function wall(w,h,d,x,y,z){
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({ color: 0xfafafa })
   );
-  mesh.position.set(x, 0.3, z);
-  mesh.userData = { name, price };
+  m.position.set(x,y,z);
+  scene.add(m);
+}
+wall(40,4,0.5, 0,2, -20);
+wall(40,4,0.5, 0,2,  20);
+wall(0.5,4,40, -20,2, 0);
+wall(0.5,4,40,  20,2, 0);
+
+// Checkout counter
+const counter = new THREE.Mesh(
+  new THREE.BoxGeometry(6, 1.1, 2),
+  new THREE.MeshStandardMaterial({ color: 0xdadada })
+);
+counter.position.set(-14, 0.55, 14);
+scene.add(counter);
+
+// Checkout zone
+const checkoutZone = new THREE.Mesh(
+  new THREE.BoxGeometry(5, 0.1, 5),
+  new THREE.MeshStandardMaterial({ color: 0x88ff88, transparent: true, opacity: 0.22 })
+);
+checkoutZone.position.set(-14, 0.05, 10);
+scene.add(checkoutZone);
+
+// ---------- Shelves (aisles) ----------
+function shelf(x, z, length=12){
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.6, length),
+    new THREE.MeshStandardMaterial({ color: 0xc9b48a })
+  );
+  base.position.set(x, 0.8, z);
+  scene.add(base);
+
+  // little “rack” feel: slats
+  for(let i=0;i<4;i++){
+    const slat = new THREE.Mesh(
+      new THREE.BoxGeometry(1.3, 0.08, length),
+      new THREE.MeshStandardMaterial({ color: 0xb99f6e })
+    );
+    slat.position.set(x, 0.25 + i*0.45, z);
+    scene.add(slat);
+  }
+}
+shelf(-6, -6, 14);
+shelf( 0, -6, 14);
+shelf( 6, -6, 14);
+shelf(-6,  6, 14);
+shelf( 0,  6, 14);
+shelf( 6,  6, 14);
+
+// ---------- Game data ----------
+let money = 20;
+let cartTotal = 0;
+
+// shopping list
+const list = { Apple: 2, Milk: 1, Cereal: 1 };
+const bought = { Apple: 0, Milk: 0, Cereal: 0 };
+
+function updateUI(){
+  moneyText.textContent = `Money: $${money}`;
+  cartText.textContent  = `Cart: $${cartTotal}`;
+
+  const parts = Object.keys(list).map(k => `${k} x${Math.max(0, list[k]-bought[k])}`);
+  listText.textContent = `List: ${parts.join(", ")}`;
+
+  if (Object.keys(list).every(k => bought[k] >= list[k])) {
+    toast("✅ You bought everything! Go pay at checkout!");
+  }
+}
+updateUI();
+
+// ---------- Items ----------
+const items = [];
+const itemMat = (color) => new THREE.MeshStandardMaterial({ color });
+
+function createItem(name, price, x, y, z, color){
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), itemMat(color));
+  mesh.position.set(x, y, z);
+  mesh.userData = { type:"item", name, price };
   scene.add(mesh);
   items.push(mesh);
+  return mesh;
 }
 
-createItem("Apple", 3, -2, -2, 0xff4444);
-createItem("Milk", 5, 0, -2, 0xffffff);
-createItem("Cereal", 7, 2, -2, 0xffcc00);
+// Place items on shelves (y heights)
+createItem("Apple",  3, -6, 1.15, -10, 0xff4d4d);
+createItem("Apple",  3,  0, 1.15, -10, 0xff4d4d);
+createItem("Milk",   5,  6, 1.15,  -2, 0xffffff);
+createItem("Cereal", 7, -6, 0.70,   2, 0xffcc33);
 
-// Raycaster for clicking items
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+// Extra filler items (looks nicer)
+createItem("Juice",  4,  0, 0.70,   2, 0xff8844);
+createItem("Bread",  2,  6, 0.70, -10, 0xd2a679);
 
-window.addEventListener("click", event => {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// ---------- Controls: pointer lock + WASD + mouse look ----------
+let yaw = 0, pitch = 0;
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup",   e => keys[e.key.toLowerCase()] = false);
 
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(items);
-
-  if (hits.length > 0) {
-    const item = hits[0].object;
-    const price = item.userData.price;
-
-    if (money >= price) {
-      money -= price;
-      cart += price;
-      scene.remove(item);
-      items.splice(items.indexOf(item), 1);
-      updateUI();
-    } else {
-      alert("Not enough money!");
-    }
+document.addEventListener("click", () => {
+  if (document.pointerLockElement !== renderer.domElement) {
+    renderer.domElement.requestPointerLock();
   }
 });
 
-function updateUI() {
-  moneyText.textContent = `Money: $${money}`;
-  cartText.textContent = `Cart: $${cart}`;
+document.addEventListener("mousemove", (e) => {
+  if (document.pointerLockElement !== renderer.domElement) return;
+  const sens = 0.0022;
+  yaw   -= e.movementX * sens;
+  pitch -= e.movementY * sens;
+  pitch = Math.max(-1.2, Math.min(1.2, pitch));
+  camera.rotation.set(pitch, yaw, 0, "YXZ");
+});
+
+// Movement (no physics, but decent)
+function move(dt){
+  const speed = (keys["shift"] ? 6.5 : 4.2);
+  const forward = new THREE.Vector3(0,0,-1).applyEuler(camera.rotation);
+  forward.y = 0; forward.normalize();
+  const right = new THREE.Vector3(1,0,0).applyEuler(camera.rotation);
+  right.y = 0; right.normalize();
+
+  const v = new THREE.Vector3();
+  if (keys["w"]) v.add(forward);
+  if (keys["s"]) v.sub(forward);
+  if (keys["d"]) v.add(right);
+  if (keys["a"]) v.sub(right);
+  v.normalize().multiplyScalar(speed * dt);
+
+  camera.position.add(v);
+
+  // keep player inside store bounds
+  camera.position.x = Math.max(-18.5, Math.min(18.5, camera.position.x));
+  camera.position.z = Math.max(-18.5, Math.min(18.5, camera.position.z));
 }
 
-// Animation loop
-function animate() {
+// ---------- Interaction (E) ----------
+const raycaster = new THREE.Raycaster();
+function lookHit(){
+  raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+  const hits = raycaster.intersectObjects(items, false);
+  return hits.length ? hits[0].object : null;
+}
+
+function nearCheckout(){
+  const dx = camera.position.x - checkoutZone.position.x;
+  const dz = camera.position.z - checkoutZone.position.z;
+  return (Math.abs(dx) < 2.5 && Math.abs(dz) < 2.5);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() !== "e") return;
+
+  // checkout
+  if (nearCheckout()){
+    if (cartTotal === 0) return toast("Your cart is empty.");
+    if (Object.keys(list).some(k => bought[k] < list[k])) return toast("You still missed items on your list!");
+    toast("🎉 Paid! You win!");
+    cartTotal = 0;
+    updateUI();
+    return;
+  }
+
+  // pick item
+  const hit = lookHit();
+  if (!hit) return;
+
+  const { name, price } = hit.userData;
+  if (money < price) return toast("Not enough money!");
+
+  // “buy” it (remove from shelf and add to cart)
+  money -= price;
+  cartTotal += price;
+  if (bought[name] !== undefined) bought[name] += 1;
+
+  scene.remove(hit);
+  items.splice(items.indexOf(hit), 1);
+
+  toast(`+ ${name} ($${price})`);
+  updateUI();
+});
+
+// ---------- Animation loop ----------
+let last = performance.now();
+function animate(){
   requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
 
-  // Movement
-  const speed = 0.07;
-  if (keys["w"]) camera.position.z -= speed;
-  if (keys["s"]) camera.position.z += speed;
-  if (keys["a"]) camera.position.x -= speed;
-  if (keys["d"]) camera.position.x += speed;
-
+  move(dt);
   renderer.render(scene, camera);
 }
-
 animate();
 
 // Resize
