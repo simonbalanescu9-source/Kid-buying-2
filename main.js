@@ -21,7 +21,43 @@ const moneyText = document.getElementById("money");
 const cartText  = document.getElementById("cart");
 const listText  = document.getElementById("list");
 const toastEl   = document.getElementById("toast");
+// ---------- Simple Background Music ----------
+const musicBtn = document.getElementById("musicBtn");
+let audioCtx = null;
+let osc = null;
+let gain = null;
+let musicOn = false;
 
+function startMusic(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (musicOn) return;
+
+  gain = audioCtx.createGain();
+  gain.gain.value = 0.03;
+  gain.connect(audioCtx.destination);
+
+  osc = audioCtx.createOscillator();
+  osc.type = "triangle";
+  osc.frequency.value = 220; // calm tone
+  osc.connect(gain);
+  osc.start();
+
+  musicOn = true;
+  musicBtn.textContent = "🔇 Music: On";
+}
+
+function stopMusic(){
+  if (!musicOn) return;
+  osc.stop();
+  osc.disconnect();
+  gain.disconnect();
+  musicOn = false;
+  musicBtn.textContent = "🔊 Music: Off";
+}
+
+musicBtn.addEventListener("click", () => {
+  musicOn ? stopMusic() : startMusic();
+});
 function toast(msg){
   toastEl.textContent = msg;
   toastEl.classList.add("show");
