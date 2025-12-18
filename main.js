@@ -66,12 +66,56 @@ function toast(msg){
 }
 
 // ---------- Store room ----------
+// ---------- Tiled Floor ----------
+const floorSize = 40; // width & depth in world units
+
+// Create a canvas texture with tile lines
+const tileCanvas = document.createElement("canvas");
+tileCanvas.width = 1024;
+tileCanvas.height = 1024;
+const tctx = tileCanvas.getContext("2d");
+
+// Base color
+tctx.fillStyle = "#f4f4f4";
+tctx.fillRect(0, 0, tileCanvas.width, tileCanvas.height);
+
+// Draw grid lines (tiles)
+tctx.strokeStyle = "#d0d0d0";
+tctx.lineWidth = 2;
+
+const tiles = 16; // 16 x 16 tiles
+const step = tileCanvas.width / tiles;
+
+for (let i = 0; i <= tiles; i++) {
+  // vertical
+  tctx.beginPath();
+  tctx.moveTo(i * step, 0);
+  tctx.lineTo(i * step, tileCanvas.height);
+  tctx.stroke();
+
+  // horizontal
+  tctx.beginPath();
+  tctx.moveTo(0, i * step);
+  tctx.lineTo(tileCanvas.width, i * step);
+  tctx.stroke();
+}
+
+const floorTex = new THREE.CanvasTexture(tileCanvas);
+floorTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+const floorMat = new THREE.MeshStandardMaterial({
+  map: floorTex,
+  roughness: 0.95,
+  metalness: 0.0
+});
+
 const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(40, 40),
-  new THREE.MeshStandardMaterial({ color: 0xf2f2f2 })
+  new THREE.PlaneGeometry(floorSize, floorSize),
+  floorMat
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
+
 
 // Simple walls
 function wall(w,h,d,x,y,z){
