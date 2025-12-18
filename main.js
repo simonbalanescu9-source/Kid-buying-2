@@ -111,6 +111,43 @@ document.addEventListener("mousemove", (e) => {
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 });
 
+// Touch drag look (for phones / tablets)
+let touchLookActive = false;
+let lastTouchX = 0;
+let lastTouchY = 0;
+const lookSensitivity = 0.0022;
+
+renderer.domElement.addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) return; // one finger to look
+  touchLookActive = true;
+  lastTouchX = e.touches[0].clientX;
+  lastTouchY = e.touches[0].clientY;
+});
+
+renderer.domElement.addEventListener("touchmove", (e) => {
+  if (!touchLookActive || e.touches.length !== 1) return;
+  const t = e.touches[0];
+
+  const dx = t.clientX - lastTouchX;
+  const dy = t.clientY - lastTouchY;
+  lastTouchX = t.clientX;
+  lastTouchY = t.clientY;
+
+  yaw   -= dx * lookSensitivity;   // left / right
+  pitch -= dy * lookSensitivity;   // up / down
+  pitch = Math.max(-1.2, Math.min(1.2, pitch));
+  camera.rotation.set(pitch, yaw, 0, "YXZ");
+
+  e.preventDefault();
+});
+
+renderer.domElement.addEventListener("touchend", () => {
+  touchLookActive = false;
+});
+renderer.domElement.addEventListener("touchcancel", () => {
+  touchLookActive = false;
+});
+
 // ========== TILED FLOOR ==========
 const floorSize = 40;
 const tileCanvas = document.createElement("canvas");
