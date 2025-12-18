@@ -587,14 +587,23 @@ function animate(){
   }
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 
-  // NPC movement
+   // NPC movement (stay away from walls)
   npcs.forEach(npc => {
     npc.position.z += npc.userData.dir * npc.userData.speed * dt;
-    if (npc.position.z > 14 || npc.position.z < -14){
+
+    const maxZ = 10; // they walk only in the middle of the store
+    if (npc.position.z > maxZ) {
+      npc.position.z = maxZ;
+      npc.userData.dir *= -1;
+      npc.rotation.y += Math.PI;
+    }
+    if (npc.position.z < -maxZ) {
+      npc.position.z = -maxZ;
       npc.userData.dir *= -1;
       npc.rotation.y += Math.PI;
     }
   });
+
 
   renderer.render(scene, camera);
 }
