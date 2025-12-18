@@ -543,17 +543,41 @@ function nearCheckout(){
   return (Math.abs(dx) < 2.5 && Math.abs(dz) < 2.5);
 }
 
+// ---------- Interact: buy & checkout ----------
 function handleInteract(){
-  // checkout
+  // checkout first
   if (nearCheckout()){
     if (cartTotal === 0) return toast("Your cart is empty.");
-    if (Object.keys(list).some(k => bought[k] < list[k])) return toast("You still missed items on your list!");
+    if (Object.keys(list).some(k => bought[k] < list[k]))
+      return toast("You still missed items on your list!");
+
     toast("🎉 Paid! You win!");
     cartTotal = 0;
     updateUI();
     return;
   }
 
+  // try to buy item
+  const hit = lookHit();
+  if (!hit) return;
+
+  const { name, price } = hit.userData;
+  if (money < price) return toast("Not enough money!");
+
+  money -= price;
+  cartTotal += price;
+
+  if (bought[name] !== undefined) bought[name] += 1;
+
+  scene.remove(hit);
+  items.splice(items.indexOf(hit), 1);
+
+  toast(`+ ${name} ($${price})`);
+  updateUI();
+}
+
+
+// ---------- Mug: find nearest NPC ----------
 function getNearestNPC(maxDistance = 3) {
   let best = null;
   let bestDistSq = maxDistance * maxDistance;
@@ -562,6 +586,7 @@ function getNearestNPC(maxDistance = 3) {
     const dx = npc.position.x - camera.position.x;
     const dz = npc.position.z - camera.position.z;
     const distSq = dx * dx + dz * dz;
+
     if (distSq < bestDistSq) {
       bestDistSq = distSq;
       best = npc;
@@ -570,6 +595,7 @@ function getNearestNPC(maxDistance = 3) {
 
   return best;
 }
+
 
   // pick item
   const hit = lookHit();
