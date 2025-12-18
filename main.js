@@ -200,6 +200,69 @@ const checkoutZone = new THREE.Mesh(
 checkoutZone.position.set(-14, 0.05, 10);
 scene.add(checkoutZone);
 
+// ---------- Cashier (Egg with Eyes) ----------
+function createCashier(x, z) {
+  const cashier = new THREE.Group();
+
+  // Egg body
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 24, 24),
+    new THREE.MeshStandardMaterial({ color: 0xfff3d1 })
+  );
+  // stretch into egg shape
+  body.scale.y = 1.4;
+  cashier.add(body);
+
+  // Face "front" rotation
+  cashier.rotation.y = Math.PI; // facing player coming to counter
+
+  // Eyes
+  const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const eyeBlackMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+
+  const leftEyeWhite = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 16, 16),
+    eyeWhiteMat
+  );
+  const rightEyeWhite = leftEyeWhite.clone();
+
+  leftEyeWhite.position.set(-0.16, 0.25, 0.45);
+  rightEyeWhite.position.set(0.16, 0.25, 0.45);
+
+  cashier.add(leftEyeWhite);
+  cashier.add(rightEyeWhite);
+
+  const leftPupil = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 12, 12),
+    eyeBlackMat
+  );
+  const rightPupil = leftPupil.clone();
+
+  leftPupil.position.set(-0.16, 0.24, 0.50);
+  rightPupil.position.set(0.16, 0.24, 0.50);
+
+  cashier.add(leftPupil);
+  cashier.add(rightPupil);
+
+  // Tiny mouth (optional)
+  const mouth = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16),
+    new THREE.MeshStandardMaterial({ color: 0x333333 })
+  );
+  mouth.rotation.x = Math.PI / 2;
+  mouth.position.set(0, 0.12, 0.50);
+  cashier.add(mouth);
+
+  // Position near counter
+  cashier.position.set(x, 0.55, z);
+
+  scene.add(cashier);
+  return cashier;
+}
+
+// Place cashier standing behind the counter
+const cashier = createCashier(-14, 13);
+
 // ---------- Shelves (aisles) ----------
 function shelf(x, z, length=12){
   const base = new THREE.Mesh(
