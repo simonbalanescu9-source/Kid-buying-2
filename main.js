@@ -416,6 +416,19 @@ if (btnInteract){
     handleInteract();
   });
 }
+
+const btnMug = document.getElementById("btnMug");
+if (btnMug){
+  btnMug.addEventListener("click", (e) => {
+    e.preventDefault();
+    handleMug();
+  });
+  btnMug.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    handleMug();
+  });
+}
+
 document.addEventListener("click", () => {
   if (document.pointerLockElement !== renderer.domElement) {
     renderer.domElement.requestPointerLock();
