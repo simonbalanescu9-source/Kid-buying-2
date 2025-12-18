@@ -94,6 +94,12 @@ document.addEventListener("keyup", (e) => {
 let yaw = 0;
 let pitch = 0;
 
+// Jump / gravity
+let verticalVelocity = 0;
+const GROUND_Y = 1.6;    // standing eye height
+const GRAVITY  = -20;    // units per second^2
+const JUMP_SPEED = 7;    // how strong the jump is
+
 document.addEventListener("click", () => {
   // avoid pointer lock on mobile
   if (/Mobi|Android/i.test(navigator.userAgent)) return;
