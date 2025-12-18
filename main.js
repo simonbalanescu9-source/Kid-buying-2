@@ -548,6 +548,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ========== TOUCH CONTROLS ==========
+// ---------- Touch Controls ----------
 const btnUp       = document.getElementById("btnUp");
 const btnDown     = document.getElementById("btnDown");
 const btnLeft     = document.getElementById("btnLeft");
@@ -555,40 +556,58 @@ const btnRight    = document.getElementById("btnRight");
 const btnInteract = document.getElementById("btnInteract");
 const btnMug      = document.getElementById("btnMug");
 const btnJump     = document.getElementById("btnJump");
-const btnLookLeft  = document.getElementById("btnLookLeft");
-const btnLookRight = document.getElementById("btnLookRight");
 
 function bindHoldButton(btn, keyName){
   if (!btn) return;
-  const start = (e) => { e.preventDefault(); keys[keyName] = true; };
-  const end   = (e) => { e.preventDefault(); keys[keyName] = false; };
+  const start = (e) => {
+    e.preventDefault();
+    keys[keyName] = true;
+  };
+  const end = (e) => {
+    e.preventDefault();
+    keys[keyName] = false;
+  };
 
   btn.addEventListener("touchstart", start);
   btn.addEventListener("touchend", end);
+  btn.addEventListener("touchcancel", end);
   btn.addEventListener("mousedown", start);
   btn.addEventListener("mouseup", end);
   btn.addEventListener("mouseleave", end);
 }
 
+// movement
 bindHoldButton(btnUp,    "w");
 bindHoldButton(btnDown,  "s");
 bindHoldButton(btnLeft,  "a");
 bindHoldButton(btnRight, "d");
 
-// turning with Q / E (for look buttons)
-bindHoldButton(btnLookLeft,  "q");
-bindHoldButton(btnLookRight, "e");
-
+// tap actions
 if (btnInteract){
-  const h = (e) => { e.preventDefault(); handleInteract(); };
+  const h = (e) => {
+    e.preventDefault();
+    handleInteract();
+  };
   btnInteract.addEventListener("click", h);
   btnInteract.addEventListener("touchstart", h);
 }
 
 if (btnMug){
-  const h2 = (e) => { e.preventDefault(); handleMug(); };
+  const h2 = (e) => {
+    e.preventDefault();
+    handleMug();
+  };
   btnMug.addEventListener("click", h2);
   btnMug.addEventListener("touchstart", h2);
+}
+
+if (btnJump){
+  const h3 = (e) => {
+    e.preventDefault();
+    handleJump();
+  };
+  btnJump.addEventListener("click", h3);
+  btnJump.addEventListener("touchstart", h3);
 }
 
 // ========== MOVEMENT & LOOP ==========
