@@ -579,41 +579,46 @@ let gunMuzzle = null;
 function createGun(){
   const group = new THREE.Group();
 
+  // main body (along Z, pointing forward = -Z)
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.8, 0.2, 0.2),
+    new THREE.BoxGeometry(0.2, 0.2, 0.8),
     new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.6, roughness: 0.3 })
   );
+  body.position.set(0, 0, -0.2);
   group.add(body);
 
+  // barrel (forward, -Z)
   const barrel = new THREE.Mesh(
-    new THREE.BoxGeometry(0.7, 0.12, 0.12),
+    new THREE.BoxGeometry(0.12, 0.12, 0.7),
     new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 })
   );
-  barrel.position.set(0.7, 0, 0);
+  barrel.position.set(0, 0, -0.8);
   group.add(barrel);
 
+  // stock (towards +Z, back into your shoulder)
   const stock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.25, 0.25),
+    new THREE.BoxGeometry(0.25, 0.25, 0.4),
     new THREE.MeshStandardMaterial({ color: 0x333333 })
   );
-  stock.position.set(-0.5, -0.05, 0);
+  stock.position.set(0, -0.02, 0.35);
   group.add(stock);
 
+  // grip (downwards)
   const grip = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.3, 0.15),
     new THREE.MeshStandardMaterial({ color: 0x111111 })
   );
-  grip.position.set(0, -0.25, -0.02);
+  grip.position.set(0.05, -0.3, -0.1);
   group.add(grip);
 
-  // muzzle reference point
+  // muzzle reference point at the end of the barrel
   const muzzle = new THREE.Object3D();
-  muzzle.position.set(1.05, 0, 0);
+  muzzle.position.set(0, 0, -1.15);
   group.add(muzzle);
 
-  // position relative to camera (right–hand side, slightly down)
-  group.position.set(0.5, -0.35, -0.9);
-  group.rotation.set(-0.1, 0.2, 0);
+  // position on screen: bottom-right, slight tilt
+  group.position.set(0.5, -0.35, -0.8);
+  group.rotation.set(-0.1, 0, 0);  // no yaw so it points straight where camera looks
 
   group.visible = false;
   camera.add(group);
@@ -623,6 +628,7 @@ function createGun(){
 }
 
 createGun();
+
 
 function updateGunVisibility(){
   if (!gun) return;
