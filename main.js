@@ -533,9 +533,11 @@ createFishingPoster(-10, 2.2, 18.8, Math.PI);
 // ========== GAME DATA ==========
 let money = 20;
 let cartTotal = 0;
+let molotovs = 0; // NEW
 
 const list = { Apple: 2, Milk: 1, Cereal: 1 };
 const bought = { Apple: 0, Milk: 0, Cereal: 0 };
+
 
 function updateUI(){
   moneyText.textContent = `Money: $${money}`;
