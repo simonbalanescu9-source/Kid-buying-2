@@ -549,6 +549,11 @@ function updateUI(){
   if (molotovText) {
     molotovText.textContent = `Molotovs: ${molotovs}`;
   }
+  if (weaponText) {
+    weaponText.textContent = hasAK
+      ? `Weapon: AK-47 (${ammo} ammo)`
+      : "Weapon: None";
+  }
   const parts = Object.keys(list).map(k => `${k} x${Math.max(0, list[k]-bought[k])}`);
   listText.textContent = `List: ${parts.join(", ")}`;
 }
