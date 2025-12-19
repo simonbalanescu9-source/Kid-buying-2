@@ -788,9 +788,11 @@ createItem("Bread",  2,  6, 0.70, -10, 0xd2a679);
 const npcs = [];
 const molotovsThrown = [];
 const bullets = []; // visible bullets
+
+// sky things
 const clouds = [];
 const pigs   = [];
-let pigSpawnTimer = 6 + Math.random()*10;
+let pigSpawnTimer = 6 + Math.random() * 10;
 
 function createNPC(x, z, shirtColor = 0x88aaff) {
   const npc = new THREE.Group();
