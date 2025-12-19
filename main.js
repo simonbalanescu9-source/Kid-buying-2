@@ -659,7 +659,7 @@ const itemMat = (color) => new THREE.MeshStandardMaterial({ color });
 function createItem(name, price, x, y, z, color){
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), itemMat(color));
   mesh.position.set(x, y, z);
-  mesh.userData = { type:"item", name, price };
+  mesh.userData = { type:"item", name, price, paid:false };
   scene.add(mesh);
   items.push(mesh);
 }
@@ -680,6 +680,9 @@ const bullets = []; // visible bullets
 const clouds = [];
 const pigs   = [];
 let pigSpawnTimer = 6 + Math.random() * 10;
+
+// vending machine
+let vendingMachine = null;
 
 function createNPC(x, z, shirtColor = 0x88aaff) {
   const npc = new THREE.Group();
@@ -876,6 +879,109 @@ function createFlyingPig(fromLeft){
   pigs.push(pig);
 }
 
+// ========== FUNNY VENDING MACHINE ==========
+function createVendingMachine(x, z){
+  const vm = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 2.1, 0.8),
+    new THREE.MeshStandardMaterial({
+      color: 0x3b3bff,
+      metalness: 0.2,
+      roughness: 0.6
+    })
+  );
+  body.position.y = 1.05;
+  vm.add(body);
+
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.7, 0.6, 0.05),
+    new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      emissive: 0x33ffcc,
+      emissiveIntensity: 0.7
+    })
+  );
+  screen.position.set(0, 1.4, 0.42);
+  vm.add(screen);
+
+  const buttonMat = new THREE.MeshStandardMaterial({ color: 0xffc107 });
+  for (let i = 0; i < 3; i++){
+    const btn = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.12, 0.05),
+      buttonMat
+    );
+    btn.position.set(0.4, 1.0 - i * 0.18, 0.43);
+    vm.add(btn);
+  }
+
+  const slot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.15, 0.06),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+  );
+  slot.position.set(0, 0.55, 0.44);
+  vm.add(slot);
+
+  vm.position.set(x, 0, z);
+  vm.rotation.y = Math.PI; // facing toward centre
+
+  scene.add(vm);
+  return vm;
+}
+
+// call it in a free area near the front-right wall
+vendingMachine = createVendingMachine(14, 5);
+
+// drink spawned from vending machine (already paid)
+function spawnVendingDrink(x, y, z){
+  const drink = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.2, 0.7, 16),
+    new THREE.MeshStandardMaterial({
+      color: 0x55c5ff,
+      emissive: 0x224488,
+      emissiveIntensity: 0.6
+    })
+  );
+  drink.position.set(x, y, z);
+
+  drink.userData = {
+    type: "item",
+    name: "Soda",
+    price: 0,
+    paid: true
+  };
+
+  scene.add(drink);
+  items.push(drink);
+}
+
+// helper: near vending machine?
+function nearVending(maxDistance = 2.5){
+  if (!vendingMachine) return false;
+  const dx = camera.position.x - vendingMachine.position.x;
+  const dz = camera.position.z - vendingMachine.position.z;
+  return (dx*dx + dz*dz) < maxDistance * maxDistance;
+}
+
+function useVendingMachine(){
+  const cost = 5;
+  if (money < cost){
+    toast("Vending machine costs $5. Not enough money.");
+    return;
+  }
+  money -= cost;
+
+  // spawn drink just in front of the machine
+  const forward = new THREE.Vector3(0, 0, -1).applyEuler(vendingMachine.rotation);
+  const spawnPos = vendingMachine.position.clone().add(forward.multiplyScalar(1.0));
+  spawnPos.y = 0.6;
+
+  spawnVendingDrink(spawnPos.x, spawnPos.y, spawnPos.z);
+
+  updateUI();
+  toast("🥤 A funny soda drops out!");
+}
+
 // ========== RAYCAST / HELPERS ==========
 const raycaster = new THREE.Raycaster();
 const centerMouse = new THREE.Vector2(0,0);
@@ -1010,23 +1116,32 @@ function handleInteract(){
     return;
   }
 
-  const hit = lookHit();
-  if (!hit) return;
-
-  const { name, price } = hit.userData;
-  if (money < price) {
-    toast("Not enough money!");
+  if (nearVending()){
+    useVendingMachine();
     return;
   }
 
-  money -= price;
-  cartTotal += price;
+  const hit = lookHit();
+  if (!hit) return;
+
+  const { name, price, paid } = hit.userData;
+
+  // normal shelf items: pay now + add to cart
+  if (!paid) {
+    if (money < price) {
+      toast("Not enough money!");
+      return;
+    }
+    money -= price;
+    cartTotal += price;
+  }
+
   if (bought[name] !== undefined) bought[name] += 1;
 
   scene.remove(hit);
   items.splice(items.indexOf(hit), 1);
 
-  toast(`+ ${name} ($${price})`);
+  toast(`+ ${name}${paid ? "" : " ($" + price + ")"}`);
   updateUI();
 }
 
@@ -1347,7 +1462,7 @@ function animate(){
 
     if (exploded) continue;
 
-    for (let j = npcs.length - 1; j >= 0; j--){
+    for (let j = npcs.length - 1; j--){
       const npc = npcs[j];
       const dx = npc.position.x - proj.mesh.position.x;
       const dz = npc.position.z - proj.mesh.position.z;
@@ -1431,4 +1546,3 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
