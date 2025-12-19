@@ -1100,13 +1100,6 @@ function animate(){
   }
 
   // turn with Q/E
-  const turnSpeed = 1.6;
-  if (keys["q"]) {
-    yaw += turnSpeed * dt;
-  }
-  if (keys["e"]) {
-    yaw -= turnSpeed * dt;
-  }
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 
   // NPC movement
