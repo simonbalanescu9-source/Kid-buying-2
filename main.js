@@ -28,6 +28,13 @@ const listText    = document.getElementById("list");
 const toastEl     = document.getElementById("toast");
 const musicBtn    = document.getElementById("musicBtn");
 const molotovText = document.getElementById("molotovs");
+const weaponText  = document.getElementById("weapon");      // NEW
+
+// shop UI
+const shopPanel    = document.getElementById("shopPanel");  // NEW
+const btnBuyMolotov = document.getElementById("btnBuyMolotov");
+const btnBuyAK      = document.getElementById("btnBuyAK");
+const btnCloseShop  = document.getElementById("btnCloseShop");
 
 function toast(msg){
   toastEl.textContent = msg;
