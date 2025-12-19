@@ -638,15 +638,27 @@ function move(dt){
 }
 
 let last = performance.now();
+
 function animate(){
   requestAnimationFrame(animate);
   const now = performance.now();
   const dt = Math.min(0.033, (now - last) / 1000);
   last = now;
 
+  // movement on the ground
   move(dt);
 
-  // Turn with Q/E (desktop or touch buttons)
+  // === GRAVITY + JUMP ===
+  verticalVelocity += GRAVITY * dt;
+  camera.position.y += verticalVelocity * dt;
+
+  // prevent falling through the floor
+  if (camera.position.y <= GROUND_Y){
+    camera.position.y = GROUND_Y;
+    verticalVelocity = 0;
+  }
+
+  // Turn with Q/E
   const turnSpeed = 1.6;
   if (keys["q"]) {
     yaw += turnSpeed * dt;
@@ -656,11 +668,11 @@ function animate(){
   }
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 
-   // NPC movement (stay away from walls)
+  // NPC movement (stay in middle)
   npcs.forEach(npc => {
     npc.position.z += npc.userData.dir * npc.userData.speed * dt;
 
-    const maxZ = 10; // they walk only in the middle of the store
+    const maxZ = 10;
     if (npc.position.z > maxZ) {
       npc.position.z = maxZ;
       npc.userData.dir *= -1;
@@ -673,9 +685,9 @@ function animate(){
     }
   });
 
-
   renderer.render(scene, camera);
 }
+
 animate();
 
 // resize
