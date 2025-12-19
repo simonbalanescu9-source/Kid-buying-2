@@ -1389,10 +1389,13 @@ function showGorillaWarning(drinkWorldPos){
     basePos.add(toCam);
   }
 
-  gorilla = createGorilla(basePos);
+    gorilla = createGorilla(basePos);
   gorillaSpeech = createGorillaSpeech(basePos);
 
+  toast("🦍 The gorilla says: DON'T DRINK THAT!");
+
   if (gorillaTimer) clearTimeout(gorillaTimer);
+
   gorillaTimer = setTimeout(() => {
     if (gorilla) {
       scene.remove(gorilla);
