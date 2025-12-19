@@ -81,9 +81,19 @@ musicBtn.addEventListener("click", (e) => {
 const keys = {};
 
 document.addEventListener("keydown", (e) => {
-  const k = e.key.toLowerCase();
-  keys[k] = true;
+  const key = e.key.toLowerCase();
+
+  if (key === "e") {
+    handleInteract();
+  }
+  else if (key === "f") {
+    handleMug();
+  }
+  else if (e.code === "Space") {
+    handleJump();
+  }
 });
+
 
 document.addEventListener("keyup", (e) => {
   const k = e.key.toLowerCase();
