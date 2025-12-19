@@ -80,14 +80,16 @@ function stopMusic(){
   musicBtn.textContent = "🔊 Music: Off";
 }
 
-musicBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  if (!audioCtx) {
-    startMusic();
-  } else {
-    musicOn ? stopMusic() : startMusic();
-  }
-});
+if (musicBtn) {
+  musicBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (!audioCtx) {
+      startMusic();
+    } else {
+      musicOn ? stopMusic() : startMusic();
+    }
+  });
+}
 
 // ========== INPUT (KEYBOARD / MOUSE) ==========
 const keys = {};
@@ -228,6 +230,10 @@ const pigs   = [];
 let pigSpawnTimer = 6 + Math.random() * 10;
 
 let vendingMachine = null;
+let gorilla = null;
+let gorillaSpeech = null;
+let gorillaTimer = null;
+let gorillaActive = false;
 
 // ========== FLOOR ==========
 const floorSize = 40;
@@ -360,6 +366,7 @@ wall(40,4,0.5, 0,2, -20);
 wall(40,4,0.5, 0,2,  20);
 wall(0.5,4,40, -20,2, 0);
 wall(0.5,4,40,  20,2, 0);
+
 // ========== METAL PIPES POSTERS ==========
 function createPoster(x, y, z, rotY = 0) {
   const canvas = document.createElement("canvas");
@@ -597,8 +604,12 @@ function updateGunVisibility(){
 
 // ========== UI UPDATE ==========
 function updateUI(){
-  moneyText.textContent = `Money: $${money}`;
-  cartText.textContent  = `Cart: ${cartTotal === 0 ? "$0" : "$" + cartTotal}`;
+  if (moneyText) {
+    moneyText.textContent = `Money: $${money}`;
+  }
+  if (cartText) {
+    cartText.textContent  = `Cart: ${cartTotal === 0 ? "$0" : "$" + cartTotal}`;
+  }
   if (molotovText) {
     molotovText.textContent = `Molotovs: ${molotovs}`;
   }
@@ -607,10 +618,12 @@ function updateUI(){
       ? `Weapon: AK-47 (${ammo} ammo)`
       : "Weapon: None";
   }
-  const parts = Object.keys(list).map(
-    k => `${k} x${Math.max(0, list[k] - bought[k])}`
-  );
-  listText.textContent = `List: ${parts.join(", ")}`;
+  if (listText) {
+    const parts = Object.keys(list).map(
+      k => `${k} x${Math.max(0, list[k] - bought[k])}`
+    );
+    listText.textContent = `List: ${parts.join(", ")}`;
+  }
 
   updateGunVisibility();
 }
@@ -980,14 +993,14 @@ function createVendingMachine(x, z){
   const screenCanvas = document.createElement("canvas");
   screenCanvas.width = 256;
   screenCanvas.height = 128;
-  const sctx = screenCanvas.getContext("2d");
-  sctx.fillStyle = "#003322";
-  sctx.fillRect(0, 0, 256, 128);
-  sctx.fillStyle = "#33ff99";
-  sctx.font = "bold 34px Arial";
-  sctx.textAlign = "center";
-  sctx.textBaseline = "middle";
-  sctx.fillText("SODA $5", 128, 60);
+  const scrCtx = screenCanvas.getContext("2d");
+  scrCtx.fillStyle = "#003322";
+  scrCtx.fillRect(0, 0, 256, 128);
+  scrCtx.fillStyle = "#33ff99";
+  scrCtx.font = "bold 34px Arial";
+  scrCtx.textAlign = "center";
+  scrCtx.textBaseline = "middle";
+  scrCtx.fillText("SODA $5", 128, 60);
   const screenTex = new THREE.CanvasTexture(screenCanvas);
 
   const screen = new THREE.Mesh(
@@ -1094,7 +1107,6 @@ function spawnVendingDrink(x, y, z){
   scene.add(drink);
   items.push(drink);
 }
-
 
 function nearVending(maxDistance = 2.5){
   if (!vendingMachine) return false;
@@ -1228,6 +1240,158 @@ if (btnCloseShop){
   });
 }
 
+// ========== FUNNY GORILLA PROPHECY ==========
+function createGorilla(position){
+  const g = new THREE.Group();
+
+  const darkFur  = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+  const midFur   = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.8 });
+  const faceMat  = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.6 });
+
+  // torso
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 1.1, 0.6),
+    darkFur
+  );
+  torso.position.y = 1.1;
+  g.add(torso);
+
+  // head
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55, 0.5, 0.5),
+    faceMat
+  );
+  head.position.set(0, 1.75, 0.05);
+  g.add(head);
+
+  // snout
+  const snout = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.25, 0.4),
+    faceMat
+  );
+  snout.position.set(0, 1.6, 0.27);
+  g.add(snout);
+
+  // eyes
+  const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const pupilMat    = new THREE.MeshStandardMaterial({ color: 0x000000 });
+
+  const eyeWhiteGeo = new THREE.SphereGeometry(0.05, 12, 12);
+  const leftEyeWhite  = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+  const rightEyeWhite = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+  leftEyeWhite.position.set(-0.13, 1.7, 0.34);
+  rightEyeWhite.position.set(0.13, 1.7, 0.34);
+  g.add(leftEyeWhite, rightEyeWhite);
+
+  const pupilGeo = new THREE.SphereGeometry(0.025, 12, 12);
+  const leftPupil  = new THREE.Mesh(pupilGeo, pupilMat);
+  const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
+  leftPupil.position.set(-0.13, 1.69, 0.36);
+  rightPupil.position.set(0.13, 1.69, 0.36);
+  g.add(leftPupil, rightPupil);
+
+  // arms
+  const armGeo = new THREE.BoxGeometry(0.28, 0.9, 0.28);
+  const leftArm  = new THREE.Mesh(armGeo, midFur);
+  const rightArm = new THREE.Mesh(armGeo, midFur);
+  leftArm.position.set(-0.6, 1.1, 0);
+  rightArm.position.set(0.6, 1.1, 0);
+  g.add(leftArm, rightArm);
+
+  // legs
+  const legGeo = new THREE.BoxGeometry(0.32, 0.75, 0.32);
+  const leftLeg  = new THREE.Mesh(legGeo, darkFur);
+  const rightLeg = new THREE.Mesh(legGeo, darkFur);
+  leftLeg.position.set(-0.25, 0.38, 0);
+  rightLeg.position.set(0.25, 0.38, 0);
+  g.add(leftLeg, rightLeg);
+
+  // slight hunch forward
+  g.rotation.x = -0.08;
+
+  g.position.copy(position);
+  g.lookAt(camera.position.x, g.position.y + 1.2, camera.position.z);
+
+  scene.add(g);
+  return g;
+}
+
+function createGorillaSpeech(position){
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+
+  // bubble background
+  ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+  ctx.fillRect(0, 0, 512, 256);
+
+  // border
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 8;
+  ctx.strokeRect(12, 12, 488, 232);
+
+  // text
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 54px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("THE END IS NEAR", 256, 128);
+
+  const tex = new THREE.CanvasTexture(canvas);
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    transparent: true,
+    side: THREE.DoubleSide,
+    emissive: new THREE.Color(0xffffff),
+    emissiveIntensity: 0.9
+  });
+
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5), mat);
+  plane.position.copy(position).add(new THREE.Vector3(0, 2.2, 0));
+
+  // roughly face the player
+  plane.lookAt(camera.position);
+
+  scene.add(plane);
+  return plane;
+}
+
+function showGorillaWarning(drinkWorldPos){
+  if (gorillaActive) return; // don't stack gorillas
+
+  gorillaActive = true;
+
+  // put gorilla near the drink, slightly toward the player
+  const basePos = drinkWorldPos.clone();
+  basePos.y = 0; // on floor
+
+  const toCam = new THREE.Vector3().subVectors(camera.position, basePos);
+  toCam.y = 0;
+  if (toCam.lengthSq() > 0.0001) {
+    toCam.normalize().multiplyScalar(1.2);
+    basePos.add(toCam);
+  }
+
+  gorilla = createGorilla(basePos);
+  gorillaSpeech = createGorillaSpeech(basePos);
+
+  // remove after exactly 5 seconds
+  if (gorillaTimer) clearTimeout(gorillaTimer);
+  gorillaTimer = setTimeout(() => {
+    if (gorilla) {
+      scene.remove(gorilla);
+      gorilla = null;
+    }
+    if (gorillaSpeech) {
+      scene.remove(gorillaSpeech);
+      gorillaSpeech = null;
+    }
+    gorillaActive = false;
+  }, 5000);
+}
+
 // ========== INTERACT, MUG, JUMP, WEAPONS ==========
 function handleInteract(){
   if (shopOpen){
@@ -1235,6 +1399,44 @@ function handleInteract(){
     return;
   }
 
+  // First: try to interact with the item in the crosshair (this includes the Soda)
+  const hit = lookHit();
+  if (hit){
+    const data = hit.userData || {};
+    const name  = data.name || "Item";
+    const price = data.price || 0;
+    const paid  = data.paid || false;
+
+    // Special event: spooky gorilla when grabbing the soda
+    if (name === "Soda") {
+      const worldPos = new THREE.Vector3();
+      hit.getWorldPosition(worldPos);
+      showGorillaWarning(worldPos);
+    }
+
+    if (!paid) {
+      if (money < price) {
+        toast("Not enough money!");
+        return;
+      }
+      money -= price;
+      cartTotal += price;
+    }
+
+    if (bought[name] !== undefined) {
+      bought[name] += 1;
+    }
+
+    scene.remove(hit);
+    const idx = items.indexOf(hit);
+    if (idx !== -1) items.splice(idx, 1);
+
+    toast("+ " + name + (paid ? "" : " ($" + price + ")"));
+    updateUI();
+    return;
+  }
+
+  // If we didn't hit an item, check other interactions
   if (nearCashier()){
     openShop();
     return;
@@ -1259,34 +1461,6 @@ function handleInteract(){
     useVendingMachine();
     return;
   }
-
-  const hit = lookHit();
-  if (!hit) return;
-
-  const data = hit.userData || {};
-  const name  = data.name || "Item";
-  const price = data.price || 0;
-  const paid  = data.paid || false;
-
-  if (!paid) {
-    if (money < price) {
-      toast("Not enough money!");
-      return;
-    }
-    money -= price;
-    cartTotal += price;
-  }
-
-  if (bought[name] !== undefined) {
-    bought[name] += 1;
-  }
-
-  scene.remove(hit);
-  const idx = items.indexOf(hit);
-  if (idx !== -1) items.splice(idx, 1);
-
-  toast("+ " + name + (paid ? "" : " ($" + price + ")"));
-  updateUI();
 }
 
 function handleMug(){
