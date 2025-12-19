@@ -895,20 +895,19 @@ function animate(){
   const dt = Math.min(0.033, (now - last) / 1000);
   last = now;
 
-  // movement on the ground
+  // Player movement
   move(dt);
 
-  // === GRAVITY + JUMP ===
+  // JUMP / GRAVITY for player
   verticalVelocity += GRAVITY * dt;
   camera.position.y += verticalVelocity * dt;
 
-  // prevent falling through the floor
   if (camera.position.y <= GROUND_Y){
     camera.position.y = GROUND_Y;
     verticalVelocity = 0;
   }
 
-  // Turn with Q/E
+  // Turn with Q/E (desktop or touch buttons)
   const turnSpeed = 1.6;
   if (keys["q"]) {
     yaw += turnSpeed * dt;
@@ -918,7 +917,7 @@ function animate(){
   }
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 
-  // NPC movement (stay in middle)
+  // NPC movement
   npcs.forEach(npc => {
     npc.position.z += npc.userData.dir * npc.userData.speed * dt;
 
@@ -935,8 +934,51 @@ function animate(){
     }
   });
 
+  // Molotovs movement + collision
+  for (let i = molotovsThrown.length - 1; i >= 0; i--){
+    const proj = molotovsThrown[i];
+    // gravity for molotov
+    proj.velocity.y += GRAVITY * dt * 0.5;
+    proj.mesh.position.addScaledVector(proj.velocity, dt);
+
+    let exploded = false;
+
+    // hit floor
+    if (proj.mesh.position.y <= 0.1){
+      explodeMolotov(proj.mesh.position);
+      scene.remove(proj.mesh);
+      molotovsThrown.splice(i, 1);
+      exploded = true;
+    }
+
+    if (exploded) continue;
+
+    // hit NPC
+    for (let j = npcs.length - 1; j >= 0; j--){
+      const npc = npcs[j];
+      const dx = npc.position.x - proj.mesh.position.x;
+      const dz = npc.position.z - proj.mesh.position.z;
+      const dy = (npc.position.y + 1.0) - proj.mesh.position.y;
+      const distSq = dx*dx + dy*dy + dz*dz;
+
+      if (distSq < 1.0){
+        explodeMolotov(proj.mesh.position);
+        scene.remove(proj.mesh);
+        molotovsThrown.splice(i, 1);
+
+        scene.remove(npc);
+        npcs.splice(j, 1);
+
+        toast("🔥 NPC down!");
+        exploded = true;
+        break;
+      }
+    }
+  }
+
   renderer.render(scene, camera);
 }
+
 
 animate();
 
