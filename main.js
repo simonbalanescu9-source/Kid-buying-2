@@ -27,6 +27,13 @@ const cartText  = document.getElementById("cart");
 const listText  = document.getElementById("list");
 const toastEl   = document.getElementById("toast");
 const musicBtn  = document.getElementById("musicBtn");
+const moneyText   = document.getElementById("money");
+const cartText    = document.getElementById("cart");
+const listText    = document.getElementById("list");
+const toastEl     = document.getElementById("toast");
+const musicBtn    = document.getElementById("musicBtn");
+const molotovText = document.getElementById("molotovs"); // NEW
+
 
 function toast(msg){
   toastEl.textContent = msg;
