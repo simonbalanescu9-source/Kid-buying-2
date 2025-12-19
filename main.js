@@ -118,8 +118,22 @@ const GROUND_Y = 1.6;
 const GRAVITY  = -20;
 const JUMP_SPEED = 7;
 
+// We declare this here so the click handler can see it
+let shopOpen = false;
+
 // Click: pointer lock first, then shooting AK
 document.addEventListener("click", (e) => {
+  // if click is on UI (shop, HUD, touch controls, etc.), ignore for pointer lock
+  if (
+    shopOpen ||
+    e.target.closest("#shopPanel") ||
+    e.target.closest("#ui") ||
+    e.target.closest("#touchControls") ||
+    e.target.closest("#lookControls")
+  ) {
+    return;
+  }
+
   // avoid pointer lock / shooting on mobile (mobile uses buttons)
   if (/Mobi|Android/i.test(navigator.userAgent)) return;
 
@@ -540,6 +554,10 @@ let ammo  = 0;
 const list = { Apple: 2, Milk: 1, Cereal: 1 };
 const bought = { Apple: 0, Milk: 0, Cereal: 0 };
 
+// shop prices (AK = 30 here)
+const MOLOTOV_COST = 15;
+const AK_COST      = 30;
+
 function updateUI(){
   moneyText.textContent = `Money: $${money}`;
   cartText.textContent  = `Cart: $${cartTotal}`;
@@ -704,24 +722,28 @@ function nearCashier(maxDistance = 3){
 }
 
 // ========== SHOP LOGIC ==========
-let shopOpen = false;
-
 function openShop(){
   if (!shopPanel) return;
   shopPanel.classList.add("show");
   shopOpen = true;
+
+  // show real mouse cursor (exit FPS pointer lock)
+  if (document.exitPointerLock) {
+    document.exitPointerLock();
+  }
 }
 
 function closeShop(){
   if (!shopPanel) return;
   shopPanel.classList.remove("show");
   shopOpen = false;
+  // we DON'T re-lock here; user will click the world to lock again
 }
 
 function buyMolotov(){
-  const cost = 15;
+  const cost = MOLOTOV_COST;
   if (money < cost){
-    toast("Molotov costs $15. Not enough money.");
+    toast(`Molotov costs $${cost}. Not enough money.`);
     return;
   }
   money -= cost;
@@ -731,20 +753,20 @@ function buyMolotov(){
 }
 
 function buyAK(){
-  const cost = 30;
+  const cost = AK_COST;  // 30
   if (hasAK){
     toast("You already have an AK-47.");
     return;
   }
   if (money < cost){
-    toast("AK-47 costs $30. Not enough money.");
+    toast(`AK-47 costs $${cost}. Not enough money.`);
     return;
   }
   money -= cost;
   hasAK = true;
   ammo  = 60;
   updateUI();
-  toast("You bought an AK-47.");
+  toast(`You bought an AK-47 for $${cost}.`);
 }
 
 if (btnBuyMolotov){
