@@ -89,15 +89,15 @@ const keys = {};
 
 document.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
-
   if (key === "e") {
     handleInteract();
-  }
-  else if (key === "f") {
+  } else if (key === "f") {
     handleMug();
-  }
-  else if (e.code === "Space") {
+  } else if (e.code === "Space") {
     handleJump();
+  } else if (key === "r") {
+    // R to throw Molotov
+    throwMolotov();
   }
 });
 
