@@ -1172,6 +1172,28 @@ function nearCashier(maxDistance = 3){
   const dz = camera.position.z - cashier.position.z;
   return (dx*dx + dz*dz) < (maxDistance * maxDistance);
 }
+function getNearbySoda(maxDistance = 1.8) {
+  let nearest = null;
+  let bestDistSq = maxDistance * maxDistance;
+
+  items.forEach(obj => {
+    if (!obj.userData || obj.userData.name !== "Soda") return;
+
+    const worldPos = new THREE.Vector3();
+    obj.getWorldPosition(worldPos);
+
+    const dx = worldPos.x - camera.position.x;
+    const dz = worldPos.z - camera.position.z;
+    const distSq = dx*dx + dz*dz;
+
+    if (distSq < bestDistSq) {
+      bestDistSq = distSq;
+      nearest = obj;
+    }
+  });
+
+  return nearest;
+}
 
 // ========== SHOP LOGIC ==========
 function openShop(){
