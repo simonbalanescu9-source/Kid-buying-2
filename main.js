@@ -647,6 +647,12 @@ function getNearestNPC(maxDistance = 3){
 
   return best;
 }
+function nearCashier(maxDistance = 3){
+  if (!cashier) return false;
+  const dx = camera.position.x - cashier.position.x;
+  const dz = camera.position.z - cashier.position.z;
+  return (dx*dx + dz*dz) < (maxDistance * maxDistance);
+}
 
 // ========== INTERACT & MUG ==========
 function handleInteract(){
