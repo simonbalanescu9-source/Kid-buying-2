@@ -1350,12 +1350,15 @@ function createGorillaSpeech(position){
     emissiveIntensity: 1.0
   });
 
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.7), mat);
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.4, 1.7),
+    mat
+  );
 
   // spawn above gorilla
   plane.position.copy(position).add(new THREE.Vector3(0, 2.3, 0));
 
-  // initial orientation toward camera
+  // face the camera
   plane.lookAt(
     camera.position.x,
     plane.position.y,
@@ -1364,15 +1367,8 @@ function createGorillaSpeech(position){
 
   scene.add(plane);
   return plane;
-});
-
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5), mat);
-  plane.position.copy(position).add(new THREE.Vector3(0, 2.2, 0));
-  plane.lookAt(camera.position);
-
-  scene.add(plane);
-  return plane;
 }
+
 
 function showGorillaWarning(drinkWorldPos){
   if (gorillaActive) return;
