@@ -731,7 +731,7 @@ function buyMolotov(){
 }
 
 function buyAK(){
-  const cost = 80;
+  const cost = 30;
   if (hasAK){
     toast("You already have an AK-47.");
     return;
