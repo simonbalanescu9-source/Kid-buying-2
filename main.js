@@ -737,10 +737,12 @@ function openShop(){
   shopPanel.classList.add("show");
   shopOpen = true;
 
-  // show real mouse cursor (exit FPS pointer lock)
   if (document.exitPointerLock) {
     document.exitPointerLock();
   }
+
+  // make sure OS cursor is visible over the shop
+  document.body.classList.add("show-cursor");
 }
 
 function closeShop(){
