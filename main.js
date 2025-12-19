@@ -572,6 +572,10 @@ createItem("Bread",  2,  6, 0.70, -10, 0xd2a679);
 
 // ========== NPC SHOPPERS ==========
 const npcs = [];
+const npcs = [];
+
+let cashier = null;                // NEW: reference to egg cashier
+const molotovsThrown = [];         // NEW: active thrown molotovs
 
 function createNPC(x, z, color = 0x88aaff) {
   const npc = new THREE.Group();
