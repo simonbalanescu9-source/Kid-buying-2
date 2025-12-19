@@ -1480,7 +1480,7 @@ function animate(){
     }
   }
 
-  // Bullets (visual only, straight line from muzzle)
+   // Bullets (visual only, straight line from muzzle)
   for (let i = bullets.length - 1; i >= 0; i--){
     const b = bullets[i];
     b.mesh.position.addScaledVector(b.velocity, dt);
@@ -1493,6 +1493,47 @@ function animate(){
       bullets.splice(i, 1);
     }
   }
+
+  // ===== CLOUD MOVEMENT =====
+  for (let i = 0; i < clouds.length; i++){
+    const c = clouds[i];
+    const data = c.userData;
+    c.position.x += data.dir * data.speed * dt;
+
+    if (c.position.x > 25){
+      c.position.x = -25;
+    } else if (c.position.x < -25){
+      c.position.x = 25;
+    }
+  }
+
+  // ===== PIG SPAWNING =====
+  pigSpawnTimer -= dt;
+  if (pigSpawnTimer <= 0){
+    const fromLeft = Math.random() > 0.5;
+    createFlyingPig(fromLeft);
+    pigSpawnTimer = 6 + Math.random() * 10;
+  }
+
+  // ===== PIG MOVEMENT =====
+  for (let i = pigs.length - 1; i >= 0; i--){
+    const pig = pigs[i];
+    const data = pig.userData;
+
+    pig.position.x += data.dir * data.speed * dt;
+
+    data.phase += dt * 2.0;
+    pig.position.y = data.baseY + Math.sin(data.phase) * 0.3;
+
+    if (Math.abs(pig.position.x) > 32){
+      scene.remove(pig);
+      pigs.splice(i, 1);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
 
   // Clouds drift
   for (let i = 0; i < clouds.length; i++){
