@@ -393,6 +393,49 @@ createPoster(-18.8,2.2,   0,    Math.PI/2);
 createPoster( 18.8,2.2,   4,   -Math.PI/2);
 createPoster( 10,  2.2, 18.8,  Math.PI);
 
+function createFishingPoster(x, y, z, rotY = 0){
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+
+  // background
+  ctx.fillStyle = "#4fa9ff";
+  ctx.fillRect(0, 0, 512, 512);
+
+  // border
+  ctx.strokeStyle = "#002347";
+  ctx.lineWidth = 16;
+  ctx.strokeRect(8, 8, 496, 496);
+
+  // Title
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 60px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Fishing", 256, 170);
+  ctx.fillText("Vacation!", 256, 260);
+
+  // website
+  ctx.font = "900 32px Arial";
+  ctx.fillText("bloxdapp.github.io", 256, 345);
+
+  const tex = new THREE.CanvasTexture(canvas);
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    side: THREE.DoubleSide,
+    emissive: new THREE.Color(0x003366),
+    emissiveIntensity: 0.6
+  });
+
+  const poster = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), mat);
+  poster.position.set(x, y, z);
+  poster.rotation.y = rotY;
+  scene.add(poster);
+}
+
+
 // ========== GAME DATA ==========
 let money = 20;
 let cartTotal = 0;
