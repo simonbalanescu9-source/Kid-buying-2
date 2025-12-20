@@ -8,15 +8,16 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   500
 );
-camera.position.set(0, 1.6, 8);
-scene.add(camera); // so we can parent the gun to the camera
+const GROUND_Y = 1.6;
+camera.position.set(0, GROUND_Y, 8);
+scene.add(camera); // for viewmodel gun
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 document.body.appendChild(renderer.domElement);
 
-// start in FPS mode: no OS cursor (CSS may or may not use this class)
+// start in FPS mode: hide cursor via CSS class
 document.body.classList.remove("show-cursor");
 
 // Lights
@@ -41,7 +42,6 @@ const btnBuyAK      = document.getElementById("btnBuyAK");
 const btnCloseShop  = document.getElementById("btnCloseShop");
 
 function toast(msg){
-  // Safe: don’t crash if #toast is missing
   if (!toastEl) {
     console.log("[TOAST]", msg);
     return;
@@ -125,17 +125,11 @@ let pitch = 0;
 
 // Jump / gravity
 let verticalVelocity = 0;
-const GROUND_Y = 1.6;
 const GRAVITY  = -20;
 const JUMP_SPEED = 7;
 
 // SHOP STATE
 let shopOpen = false;
-
-// BACKROOM STATE
-let backRoomActive = false;
-let funnyDoor = null;
-let funnyBear = null;
 
 // Pointer lock change -> toggle cursor class
 document.addEventListener("pointerlockchange", () => {
@@ -244,8 +238,14 @@ let gorilla = null;
 let gorillaSpeech = null;
 let gorillaTimer = null;
 let gorillaActive = false;
+let funnyDoor = null;
+let backRoomActive = false;
+let funnyBear = null;
 
-// ========== FLOOR ==========
+// Backrooms center (far away from store)
+const BACKROOM_CENTER = new THREE.Vector3(100, 0, 100);
+
+// ========== FLOOR (SUPERMARKET) ==========
 const floorSize = 40;
 const tileCanvas = document.createElement("canvas");
 tileCanvas.width = 1024;
@@ -384,16 +384,13 @@ function createPoster(x, y, z, rotY = 0) {
   canvas.height = 512;
   const ctx = canvas.getContext("2d");
 
-  // yellow background
   ctx.fillStyle = "#ffd700";
   ctx.fillRect(0, 0, 512, 512);
 
-  // black border
   ctx.strokeStyle = "#000";
   ctx.lineWidth = 16;
   ctx.strokeRect(8, 8, 496, 496);
 
-  // title text
   ctx.fillStyle = "#000";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -419,7 +416,7 @@ function createPoster(x, y, z, rotY = 0) {
   scene.add(poster);
 }
 
-// same placements as your old script
+// posters
 createPoster( 0,   2.2, -18.8,  0);
 createPoster(-18.8,2.2,   0,    Math.PI/2);
 createPoster( 18.8,2.2,   4,   -Math.PI/2);
@@ -463,10 +460,9 @@ function createFishingPoster(x, y, z, rotY = 0){
   scene.add(poster);
 }
 
-// same spot as before
 createFishingPoster(-10, 2.2, 18.8, Math.PI);
 
-// ========== FUNNY DOOR ==========
+// ========== FUNNY DOOR (on back wall, not in shelves/poster) ==========
 function createFunnyDoor(x, z, rotY = 0){
   const doorGroup = new THREE.Group();
   const doorMat = new THREE.MeshStandardMaterial({
@@ -481,7 +477,6 @@ function createFunnyDoor(x, z, rotY = 0){
     new THREE.BoxGeometry(1.8, 3.2, 0.2),
     doorMat
   );
-
   panel.position.y = 1.6;
   doorGroup.add(panel);
 
@@ -494,19 +489,16 @@ function createFunnyDoor(x, z, rotY = 0){
   return doorGroup;
 }
 
-// *** moved to back wall so it's NOT inside shelves ***
-// shelves are around z = -6 and 6 with length 14 (z from about -13 to +13)
-// door is now at z = -18.5, in the corridor by the back wall
-funnyDoor = createFunnyDoor(0, -18.5, 0);
+// Put the door on the back wall, to the right, clear of shelves/poster
+funnyDoor = createFunnyDoor(12, -19.7, 0);
 
-// make the door draw on top + easy to see
+// Make the door always draw on top a bit (so you never "lose" it in overlap)
 funnyDoor.traverse(obj => {
   if (obj.isMesh) {
     obj.renderOrder = 9999;
     obj.material.depthTest = false;
   }
 });
-funnyDoor.position.y = 0.01;
 
 // ========== CHECKOUT COUNTER & ZONE ==========
 const counter = new THREE.Mesh(
@@ -879,7 +871,7 @@ function createFlyingPig(fromLeft){
   pigs.push(pig);
 }
 
-// ========== VENDING MACHINE 2.0 (MORE REALISTIC) ==========
+// ========== VENDING MACHINE 2.0 ==========
 function createSodaCanMesh({ glow = false } = {}) {
   const labelCanvas = document.createElement("canvas");
   labelCanvas.width = 256;
@@ -1369,16 +1361,13 @@ function createGorillaSpeech(position){
   canvas.height = 256;
   const ctx = canvas.getContext("2d");
 
-  // bubble background
   ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
   ctx.fillRect(0, 0, 512, 256);
 
-  // border
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 8;
   ctx.strokeRect(16, 16, 480, 224);
 
-  // text
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 50px Arial";
   ctx.textAlign = "center";
@@ -1402,10 +1391,8 @@ function createGorillaSpeech(position){
     mat
   );
 
-  // spawn above gorilla
   plane.position.copy(position).add(new THREE.Vector3(0, 2.3, 0));
 
-  // face the camera
   plane.lookAt(
     camera.position.x,
     plane.position.y,
@@ -1456,59 +1443,50 @@ function enterBackrooms(){
   if(backRoomActive) return;
   backRoomActive = true;
 
-  // HIDE THE SUPERMARKET: everything except camera + lights
-  scene.traverse(obj => {
-    if (obj === camera) return;
-    if (obj.isLight) return;
-    obj.visible = false;
-  });
+  // move player far away from supermarket
+  camera.position.set(BACKROOM_CENTER.x, GROUND_Y, BACKROOM_CENTER.z);
 
-  // reposition player
-  camera.position.set(0, GROUND_Y, 0);
-
-  // make yellow fog
+  // spooky yellow background
   scene.background = new THREE.Color(0xd7d900);
 
-  // build tiny 8x8 backroom box (+ floor)
-  const wallMat = new THREE.MeshStandardMaterial({
-    color:0xf8f17a,
-    roughness:0.9
-  });
-
+  // backroom floor
   const backFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(8,8),
-    new THREE.MeshStandardMaterial({ color:0xf0e98c, roughness:0.9 })
+    new THREE.PlaneGeometry(8, 8),
+    new THREE.MeshStandardMaterial({ color: 0xf0e98c, roughness: 0.9 })
   );
   backFloor.rotation.x = -Math.PI / 2;
-  backFloor.position.set(0, 0, 0);
-  backFloor.visible = true;
+  backFloor.position.set(BACKROOM_CENTER.x, 0, BACKROOM_CENTER.z);
   scene.add(backFloor);
 
+  // walls
+  const wallMat = new THREE.MeshStandardMaterial({
+    color:0xf8f17a, roughness:0.9
+  });
+
   const walls = [
-    new THREE.Mesh(new THREE.BoxGeometry(8,3.5,0.4), wallMat),
-    new THREE.Mesh(new THREE.BoxGeometry(8,3.5,0.4), wallMat),
-    new THREE.Mesh(new THREE.BoxGeometry(0.4,3.5,8), wallMat),
-    new THREE.Mesh(new THREE.BoxGeometry(0.4,3.5,8), wallMat)
+    new THREE.Mesh(new THREE.BoxGeometry(8,3.5,0.4), wallMat), // north
+    new THREE.Mesh(new THREE.BoxGeometry(8,3.5,0.4), wallMat), // south
+    new THREE.Mesh(new THREE.BoxGeometry(0.4,3.5,8), wallMat), // west
+    new THREE.Mesh(new THREE.BoxGeometry(0.4,3.5,8), wallMat)  // east
   ];
 
-  walls[0].position.set(0,1.75,-4);
-  walls[1].position.set(0,1.75,4);
-  walls[2].position.set(-4,1.75,0);
-  walls[3].position.set(4,1.75,0);
+  walls[0].position.set(BACKROOM_CENTER.x, 1.75, BACKROOM_CENTER.z - 4);
+  walls[1].position.set(BACKROOM_CENTER.x, 1.75, BACKROOM_CENTER.z + 4);
+  walls[2].position.set(BACKROOM_CENTER.x - 4, 1.75, BACKROOM_CENTER.z);
+  walls[3].position.set(BACKROOM_CENTER.x + 4, 1.75, BACKROOM_CENTER.z);
 
-  walls.forEach(w=>{ w.visible = true; scene.add(w); });
+  walls.forEach(w=>scene.add(w));
 
-  // add funny bear
+  // funny bear
   funnyBear = new THREE.Mesh(
     new THREE.BoxGeometry(1,2,1),
     new THREE.MeshStandardMaterial({ color:0x995522 })
   );
-  funnyBear.position.set(0,1.0,0);
+  funnyBear.position.set(BACKROOM_CENTER.x, 1.0, BACKROOM_CENTER.z);
   funnyBear.userData = { type:"funnyBear" };
-  funnyBear.visible = true;
   scene.add(funnyBear);
 
-  toast("You feel uneasy…")
+  toast("You feel uneasy…");
 }
 
 // ========== INTERACT, MUG, JUMP, WEAPONS ==========
@@ -1520,7 +1498,7 @@ function handleInteract(){
 
   // BACKROOM MODE: only interact with bear
   if (backRoomActive) {
-    if (funnyBear && funnyBear.visible) {
+    if (funnyBear) {
       raycaster.setFromCamera(centerMouse, camera);
       const bearHit = raycaster.intersectObject(funnyBear, true);
       if(bearHit.length){
@@ -1530,18 +1508,16 @@ function handleInteract(){
     return;
   }
 
-  // NORMAL STORE MODE
-
-  // funny door check BEFORE soda pickup
+  // 0) Check funny door FIRST so soda/items behind it don't "steal" the hit
   raycaster.setFromCamera(centerMouse, camera);
   const doorHit = raycaster.intersectObject(funnyDoor, true);
-  if(doorHit.length){
+  if (doorHit.length){
     toast("The door swings open...");
     enterBackrooms();
     return;
   }
 
-  // 1) grab Soda near you (triggers gorilla)
+  // 1) Grab Soda near you (triggers gorilla)
   const nearbySoda = getNearbySoda(1.8);
   if (nearbySoda){
     const data = nearbySoda.userData || {};
@@ -1575,7 +1551,7 @@ function handleInteract(){
     return;
   }
 
-  // 2) interact with whatever you're looking at
+  // 2) Interact with item you're looking at
   const hit = lookHit();
   if (hit){
     const data = hit.userData || {};
@@ -1605,7 +1581,7 @@ function handleInteract(){
     return;
   }
 
-  // 3) zones
+  // 3) Zones & vending
   if (nearCashier()){
     openShop();
     return;
@@ -1634,7 +1610,7 @@ function handleInteract(){
 
 function handleMug(){
   if (backRoomActive) {
-    toast("Nobody to mug in the backrooms...");
+    toast("No one here to mug… just you and the bear.");
     return;
   }
 
@@ -1666,11 +1642,6 @@ function handleJump(){
 }
 
 function throwMolotov(){
-  if (backRoomActive) {
-    toast("Molotovs are disabled here.");
-    return;
-  }
-
   if (molotovs <= 0){
     toast("No Molotovs! Buy one from the egg.");
     return;
@@ -1735,11 +1706,6 @@ function shootAK(){
   }
   if (ammo <= 0){
     toast("Out of ammo!");
-    return;
-  }
-
-  if (backRoomActive) {
-    toast("The gun feels useless here...");
     return;
   }
 
@@ -1899,11 +1865,14 @@ function move(dt){
     camera.position.add(v);
   }
 
-  // COLLISION / BOUNDS
   if (backRoomActive) {
-    // backrooms bounding box: match the 8x8 walls at ±4
-    camera.position.x = Math.max(-3.6, Math.min(3.6, camera.position.x));
-    camera.position.z = Math.max(-3.6, Math.min(3.6, camera.position.z));
+    // clamp around backrooms box
+    const minX = BACKROOM_CENTER.x - 3.6;
+    const maxX = BACKROOM_CENTER.x + 3.6;
+    const minZ = BACKROOM_CENTER.z - 3.6;
+    const maxZ = BACKROOM_CENTER.z + 3.6;
+    camera.position.x = Math.max(minX, Math.min(maxX, camera.position.x));
+    camera.position.z = Math.max(minZ, Math.min(maxZ, camera.position.z));
   } else {
     // supermarket bounds
     camera.position.x = Math.max(-18.5, Math.min(18.5, camera.position.x));
@@ -1931,8 +1900,8 @@ function animate(){
 
   camera.rotation.set(pitch, yaw, 0, "YXZ");
 
+  // NPC wander
   if (!backRoomActive) {
-    // supermarket NPCs, projectiles, sky, pigs only when not in backrooms
     npcs.forEach(npc => {
       npc.position.z += npc.userData.dir * npc.userData.speed * dt;
 
@@ -1948,94 +1917,98 @@ function animate(){
         npc.rotation.y += Math.PI;
       }
     });
+  }
 
-    for (let i = molotovsThrown.length - 1; i >= 0; i--){
-      const proj = molotovsThrown[i];
-      proj.velocity.y += GRAVITY * dt * 0.5;
-      proj.mesh.position.addScaledVector(proj.velocity, dt);
+  // Molotovs
+  for (let i = molotovsThrown.length - 1; i >= 0; i--){
+    const proj = molotovsThrown[i];
+    proj.velocity.y += GRAVITY * dt * 0.5;
+    proj.mesh.position.addScaledVector(proj.velocity, dt);
 
-      let exploded = false;
+    let exploded = false;
 
-      if (proj.mesh.position.y <= 0.1){
+    if (proj.mesh.position.y <= 0.1){
+      explodeMolotov(proj.mesh.position);
+      scene.remove(proj.mesh);
+      molotovsThrown.splice(i, 1);
+      exploded = true;
+    }
+
+    if (exploded) continue;
+
+    for (let j = npcs.length - 1; j >= 0; j--){
+      const npc = npcs[j];
+      const dx = npc.position.x - proj.mesh.position.x;
+      const dz = npc.position.z - proj.mesh.position.z;
+      const dy = (npc.position.y + 1.0) - proj.mesh.position.y;
+      const distSq = dx*dx + dy*dy + dz*dz;
+
+      if (distSq < 1.0){
         explodeMolotov(proj.mesh.position);
         scene.remove(proj.mesh);
         molotovsThrown.splice(i, 1);
+
+        scene.remove(npc);
+        npcs.splice(j, 1);
+
+        toast("🔥 NPC down!");
         exploded = true;
-      }
-
-      if (exploded) continue;
-
-      for (let j = npcs.length - 1; j >= 0; j--){
-        const npc = npcs[j];
-        const dx = npc.position.x - proj.mesh.position.x;
-        const dz = npc.position.z - proj.mesh.position.z;
-        const dy = (npc.position.y + 1.0) - proj.mesh.position.y;
-        const distSq = dx*dx + dy*dy + dz*dz;
-
-        if (distSq < 1.0){
-          explodeMolotov(proj.mesh.position);
-          scene.remove(proj.mesh);
-          molotovsThrown.splice(i, 1);
-
-          scene.remove(npc);
-          npcs.splice(j, 1);
-
-          toast("🔥 NPC down!");
-          exploded = true;
-          break;
-        }
-      }
-    }
-
-    for (let i = bullets.length - 1; i >= 0; i--){
-      const b = bullets[i];
-      b.mesh.position.addScaledVector(b.velocity, dt);
-      b.life -= dt;
-
-      const distSq = b.mesh.position.distanceToSquared(camera.position);
-
-      if (b.life <= 0 || distSq > 2000){
-        scene.remove(b.mesh);
-        bullets.splice(i, 1);
-      }
-    }
-
-    for (let i = 0; i < clouds.length; i++){
-      const c = clouds[i];
-      const data = c.userData;
-      c.position.x += data.dir * data.speed * dt;
-
-      if (c.position.x > 25){
-        c.position.x = -25;
-      } else if (c.position.x < -25){
-        c.position.x = 25;
-      }
-    }
-
-    pigSpawnTimer -= dt;
-    if (pigSpawnTimer <= 0){
-      const fromLeft = Math.random() > 0.5;
-      createFlyingPig(fromLeft);
-      pigSpawnTimer = 6 + Math.random() * 10;
-    }
-
-    for (let i = pigs.length - 1; i >= 0; i--){
-      const pig = pigs[i];
-      const data = pig.userData;
-
-      pig.position.x += data.dir * data.speed * dt;
-      data.phase += dt * 2.0;
-      pig.position.y = data.baseY + Math.sin(data.phase) * 0.3;
-
-      if (Math.abs(pig.position.x) > 32){
-        scene.remove(pig);
-        pigs.splice(i, 1);
+        break;
       }
     }
   }
 
+  // Bullets
+  for (let i = bullets.length - 1; i >= 0; i--){
+    const b = bullets[i];
+    b.mesh.position.addScaledVector(b.velocity, dt);
+    b.life -= dt;
+
+    const distSq = b.mesh.position.distanceToSquared(camera.position);
+
+    if (b.life <= 0 || distSq > 2000){
+      scene.remove(b.mesh);
+      bullets.splice(i, 1);
+    }
+  }
+
+  // Clouds
+  for (let i = 0; i < clouds.length; i++){
+    const c = clouds[i];
+    const data = c.userData;
+    c.position.x += data.dir * data.speed * dt;
+
+    if (c.position.x > 25){
+      c.position.x = -25;
+    } else if (c.position.x < -25){
+      c.position.x = 25;
+    }
+  }
+
+  // Pigs
+  pigSpawnTimer -= dt;
+  if (pigSpawnTimer <= 0 && !backRoomActive){
+    const fromLeft = Math.random() > 0.5;
+    createFlyingPig(fromLeft);
+    pigSpawnTimer = 6 + Math.random() * 10;
+  }
+
+  for (let i = pigs.length - 1; i >= 0; i--){
+    const pig = pigs[i];
+    const data = pig.userData;
+
+    pig.position.x += data.dir * data.speed * dt;
+    data.phase += dt * 2.0;
+    pig.position.y = data.baseY + Math.sin(data.phase) * 0.3;
+
+    if (Math.abs(pig.position.x) > 32){
+      scene.remove(pig);
+      pigs.splice(i, 1);
+    }
+  }
+
   // Keep gorilla speech facing the player
-  if (gorillaSpeech && gorillaSpeech.visible) {
+  if (gorillaSpeech) {
     gorillaSpeech.lookAt(
       camera.position.x,
       gorillaSpeech.position.y,
