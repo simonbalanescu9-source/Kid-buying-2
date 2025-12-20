@@ -490,7 +490,7 @@ function createFunnyDoor(x, z, rotY = 0){
   return doorGroup;
 }
 
-funnyDoor = createFunnyDoor(0, -18.5, 0);
+funnyDoor = createFunnyDoor(0, -10, 0);
 
 // ========== CHECKOUT COUNTER & ZONE ==========
 const counter = new THREE.Mesh(
