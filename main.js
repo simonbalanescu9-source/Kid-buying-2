@@ -507,9 +507,8 @@ function createFunnyDoor(x, z, rotY = 0){
   return doorGroup;
 }
 
-// Against the back (north) wall at z ~ -20
-funnyDoor = createFunnyDoor(0, -12, 0);
-
+// Door on the RIGHT wall, exactly at your starting Z so it's next to you
+funnyDoor = createFunnyDoor(18.6, 8, -Math.PI / 2);
 // ===== CHECKOUT COUNTER & ZONE =====
 const counter = new THREE.Mesh(
   new THREE.BoxGeometry(6, 1.1, 2),
