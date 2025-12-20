@@ -491,7 +491,13 @@ function createFunnyDoor(x, z, rotY = 0){
 }
 
 funnyDoor = createFunnyDoor(0, -10, 0);
-
+// --- STEP 3: make the door draw on top + easy to see ---
+funnyDoor.traverse(obj => {
+  if (obj.isMesh) {
+    obj.renderOrder = 9999;
+    obj.material.depthTest = false;
+  }
+});
 // ========== CHECKOUT COUNTER & ZONE ==========
 const counter = new THREE.Mesh(
   new THREE.BoxGeometry(6, 1.1, 2),
