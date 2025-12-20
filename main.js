@@ -2049,6 +2049,7 @@ function move(dt) {
 }
 
 let last = performance.now();
+let didForceSpawn = false; // <- add this
 
 function animate() {
   requestAnimationFrame(animate);
