@@ -485,7 +485,8 @@ function createFunnyDoor(x, z, rotY = 0){
   return doorGroup;
 }
 
-funnyDoor = createFunnyDoor(-19.8, 0, Math.PI/2);
+funnyDoor = createFunnyDoor(0, -18.5, 0);
+
 // ========== CHECKOUT COUNTER & ZONE ==========
 const counter = new THREE.Mesh(
   new THREE.BoxGeometry(6, 1.1, 2),
