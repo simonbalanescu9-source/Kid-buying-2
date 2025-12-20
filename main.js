@@ -9,8 +9,9 @@ const camera = new THREE.PerspectiveCamera(
   500
 );
 const GROUND_Y = 1.6;
-camera.position.set(-10, GROUND_Y, 12);
-scene.add(camera); // so we can attach gun
+// Spawn in a totally free corner, far from shelves
+camera.position.set(-14, GROUND_Y, -14);
+scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
