@@ -506,7 +506,7 @@ function createFunnyDoor(x, z, rotY = 0) {
 }
 
 // Against the back (north) wall at z ~ -20
-funnyDoor = createFunnyDoor(0, -19.6, 0);
+funnyDoor = createFunnyDoor(0, -12, 0);
 
 // ===== CHECKOUT COUNTER & ZONE =====
 const counter = new THREE.Mesh(
