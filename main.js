@@ -241,11 +241,10 @@ let gorillaActive = false;
 let funnyDoor = null;
 let backRoomActive = false;
 let funnyBear = null;
+// Backrooms center (far away from store)
 const BACKROOM_CENTER = new THREE.Vector3(100, 0, 100);
 let backRoomFloor = null;
 let backRoomWalls = [];
-// Backrooms center (far away from store)
-const BACKROOM_CENTER = new THREE.Vector3(100, 0, 100);
 
 // ========== FLOOR (SUPERMARKET) ==========
 const floorSize = 40;
@@ -1866,16 +1865,6 @@ function move(dt){
     const maxX = BACKROOM_CENTER.x + 3.6;
     const minZ = BACKROOM_CENTER.z - 3.6;
     const maxZ = BACKROOM_CENTER.z + 3.6;
-    camera.position.x = Math.max(minX, Math.min(maxX, camera.position.x));
-    camera.position.z = Math.max(minZ, Math.min(maxZ, camera.position.z));
-  } else {
-    // supermarket bounds
-      if (backRoomActive) {
-    // clamp around the backrooms box
-    const minX = BACKROOM_CENTER.x - 4.5;
-    const maxX = BACKROOM_CENTER.x + 4.5;
-    const minZ = BACKROOM_CENTER.z - 4.5;
-    const maxZ = BACKROOM_CENTER.z + 4.5;
     camera.position.x = Math.max(minX, Math.min(maxX, camera.position.x));
     camera.position.z = Math.max(minZ, Math.min(maxZ, camera.position.z));
   } else {
