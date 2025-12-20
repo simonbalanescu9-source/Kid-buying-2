@@ -490,7 +490,7 @@ function createFunnyDoor(x, z, rotY = 0){
   return doorGroup;
 }
 
-funnyDoor = createFunnyDoor(0, -10, 0);
+funnyDoor = createFunnyDoor(0, -18.5, 0);
 // --- STEP 3: make the door draw on top + easy to see ---
 funnyDoor.traverse(obj => {
   if (obj.isMesh) {
