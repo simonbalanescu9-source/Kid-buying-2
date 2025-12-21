@@ -240,6 +240,20 @@ const BACKROOM_CENTER = new THREE.Vector3(100, 0, 100);
 let backRoomFloor = null;
 let backRoomWalls = [];
 
+// ===== CAULDRON DATA =====
+let cauldron = null;
+const cauldronGasses = [];
+
+// Groceries it can “mix” just for color – nothing is consumed
+const CAULDRON_INGREDIENTS = [
+  { name: "Apple",  color: 0xff4d4d },
+  { name: "Milk",   color: 0xffffff },
+  { name: "Cereal", color: 0xffcc33 },
+  { name: "Juice",  color: 0xff8844 },
+  { name: "Bread",  color: 0xd2a679 },
+  { name: "Soda",   color: 0xff5533 }
+];
+
 // ===== FLOOR =====
 const floorSize = 40;
 const tileCanvas = document.createElement("canvas");
@@ -777,21 +791,20 @@ function createNPC(x, z, shirtColor = 0x88aaff) {
   hair.position.set(0, 2.05, 0);
   npc.add(hair);
 
-    npc.position.set(x, 0, z);
+  npc.position.set(x, 0, z);
 
   npc.userData = {
     dir: Math.random() > 0.5 ? 1 : -1,
     speed: 0.8 + Math.random() * 0.6,
     wallet: 8,
-    avenger: false,          // NEW: becomes true once you clean them out
-    hasMuggedPlayer: false   // NEW: so they only mug you once
+    avenger: false,          // becomes true once you clean them out
+    hasMuggedPlayer: false   // so they only mug you once
   };
 
   scene.add(npc);
   npcs.push(npc);
   return npc;
 }
-
 
 createNPC(-10, -4);
 createNPC(4, -8, 0xaaffaa);
@@ -1182,6 +1195,144 @@ function useVendingMachine() {
 
   updateUI();
   toast("🥤 A funny soda drops out!");
+}
+
+// ===== WITCH CAULDRON =====
+function createCauldron(x, z) {
+  const group = new THREE.Group();
+
+  // main pot
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.6, 0.7, 0.6, 24, 1, true),
+    new THREE.MeshStandardMaterial({
+      color: 0x222222,
+      metalness: 0.6,
+      roughness: 0.6
+    })
+  );
+  pot.position.y = 0.3;
+  group.add(pot);
+
+  // rim
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.07, 16, 28),
+    new THREE.MeshStandardMaterial({
+      color: 0x111111,
+      metalness: 0.6,
+      roughness: 0.4
+    })
+  );
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = 0.6;
+  group.add(rim);
+
+  // glowing goo
+  const goo = new THREE.Mesh(
+    new THREE.CircleGeometry(0.5, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0x00ff88,
+      emissive: 0x00ff88,
+      emissiveIntensity: 0.7,
+      side: THREE.DoubleSide
+    })
+  );
+  goo.rotation.x = -Math.PI / 2;
+  goo.position.y = 0.61;
+  group.add(goo);
+
+  // little smoke puff
+  const smoke = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 16, 16),
+    new THREE.MeshStandardMaterial({
+      color: 0x88ffcc,
+      emissive: 0x66ffcc,
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0.7
+    })
+  );
+  smoke.position.set(0, 1.0, 0);
+  group.add(smoke);
+
+  group.position.set(x, 0, z);
+  scene.add(group);
+  return group;
+}
+
+// place it in an empty corner of the shop
+cauldron = createCauldron(12, -12);
+
+// distance check
+function nearCauldron(maxDistance = 2.5) {
+  if (!cauldron) return false;
+  const dx = camera.position.x - cauldron.position.x;
+  const dz = camera.position.z - cauldron.position.z;
+  return (dx * dx + dz * dz) < maxDistance * maxDistance;
+}
+
+// mix two hex colors (0xRRGGBB → average)
+function mixColors(c1, c2) {
+  const r1 = (c1 >> 16) & 0xff, g1 = (c1 >> 8) & 0xff, b1 = c1 & 0xff;
+  const r2 = (c2 >> 16) & 0xff, g2 = (c2 >> 8) & 0xff, b2 = c2 & 0xff;
+  const r = (r1 + r2) >> 1;
+  const g = (g1 + g2) >> 1;
+  const b = (b1 + b2) >> 1;
+  return (r << 16) | (g << 8) | b;
+}
+
+function spawnCauldronGasBlob(color) {
+  const geo = new THREE.SphereGeometry(0.4 + Math.random() * 0.6, 16, 16);
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity: 0.4,
+    transparent: true,
+    opacity: 0.8,
+    depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+
+  // anywhere on the shop floor, inside the walls
+  const x = -18 + Math.random() * 36;
+  const z = -18 + Math.random() * 36;
+  const y = 0.3 + Math.random() * 1.4;
+  mesh.position.set(x, y, z);
+
+  scene.add(mesh);
+
+  cauldronGasses.push({
+    mesh,
+    life: 10,
+    maxLife: 10,
+    floatSpeed: 0.2 + Math.random() * 0.3
+  });
+}
+
+function activateCauldron() {
+  if (backRoomActive) {
+    toast("The magic fizzles in this place…");
+    return;
+  }
+  if (CAULDRON_INGREDIENTS.length < 2) return;
+
+  // pick 2 different ingredients
+  let i = Math.floor(Math.random() * CAULDRON_INGREDIENTS.length);
+  let j = i;
+  while (j === i) {
+    j = Math.floor(Math.random() * CAULDRON_INGREDIENTS.length);
+  }
+  const a = CAULDRON_INGREDIENTS[i];
+  const b = CAULDRON_INGREDIENTS[j];
+
+  const color = mixColors(a.color, b.color);
+
+  // spawn a bunch of gas blobs
+  const count = 40;
+  for (let k = 0; k < count; k++) {
+    spawnCauldronGasBlob(color);
+  }
+
+  toast(`You mix ${a.name} + ${b.name}. Strange gas fills the store for 10 seconds...`);
 }
 
 // ===== RAYCAST HELPERS =====
@@ -1755,6 +1906,12 @@ function handleInteract() {
     useVendingMachine();
     return;
   }
+
+  // Cauldron interaction – mix groceries into gas
+  if (nearCauldron()) {
+    activateCauldron();
+    return;
+  }
 }
 
 function handleMug() {
@@ -2103,7 +2260,7 @@ function animate() {
 
         if (dist > 0.001) {
           toPlayer.normalize();
-          const followSpeed = 1.0; // SLOW follow speed; tweak if you want
+          const followSpeed = 1.0; // slow follow speed
           npc.position.x += toPlayer.x * followSpeed * dt;
           npc.position.z += toPlayer.z * followSpeed * dt;
 
@@ -2236,6 +2393,21 @@ function animate() {
       gorillaSpeech.position.y,
       camera.position.z
     );
+  }
+
+  // Cauldron gas update – float up & fade, then despawn
+  for (let i = cauldronGasses.length - 1; i >= 0; i--) {
+    const g = cauldronGasses[i];
+    g.life -= dt;
+    g.mesh.position.y += g.floatSpeed * dt;
+
+    const t = Math.max(0, g.life / g.maxLife);
+    g.mesh.material.opacity = t * 0.8;
+
+    if (g.life <= 0) {
+      scene.remove(g.mesh);
+      cauldronGasses.splice(i, 1);
+    }
   }
 
   renderer.render(scene, camera);
